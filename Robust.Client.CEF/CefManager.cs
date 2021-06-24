@@ -1,16 +1,12 @@
 using System;
-using System.IO;
-using System.Reflection;
-using CefSharp;
-using CefSharp.Handler;
-using CefSharp.OffScreen;
 using JetBrains.Annotations;
 using Robust.Shared.Utility;
+using Xilium.CefGlue;
 
 namespace Robust.Client.CEF
 {
     [UsedImplicitly]
-    public class CefManager : IApp
+    public class CefManager : CefApp
     {
         private bool _initialized = false;
 
@@ -23,35 +19,16 @@ namespace Robust.Client.CEF
                 WindowlessRenderingEnabled = true,
             };
 
-            Cef.Initialize(settings, true);
+            CefRuntime.Initialize(new CefMainArgs(new string[0]), settings, this, IntPtr.Zero);
 
             _initialized = true;
         }
 
         public void Shutdown()
         {
-            Cef.Shutdown();
-        }
+            DebugTools.Assert(_initialized);
 
-        void IApp.OnRegisterCustomSchemes(ISchemeRegistrar registrar)
-        {
-        }
-
-        IBrowserProcessHandler IApp.BrowserProcessHandler { get; } = new BrowserProcessHandler();
-
-        private static Assembly? Resolver(object sender, ResolveEventArgs args)
-        {
-            if (!args.Name.StartsWith("CefSharp.Core.Runtime"))
-                return null;
-
-            string assemblyName = args.Name.Split(new[] { ',' }, 2)[0] + ".dll";
-            string archSpecificPath = Path.Combine(AppDomain.CurrentDomain.SetupInformation.ApplicationBase!,
-                Environment.Is64BitProcess ? "x64" : "x86",
-                assemblyName);
-
-            return File.Exists(archSpecificPath)
-                ? Assembly.LoadFile(archSpecificPath)
-                : null;
+            CefRuntime.Shutdown();
         }
     }
 }
