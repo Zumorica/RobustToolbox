@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\MSBuild\Robust.Properties.targets" />
+    <Import Project="..\MSBuild\Robust.Engine.props" />
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
+
+    <Import Project="..\MSBuild\Robust.DefineConstants.targets" />
+    <Target Name="RobustAfterBuild" AfterTargets="Build" />
+    <Import Project="..\MSBuild\Robust.Engine.targets" />
+  
+    <ItemGroup>
+      <PackageReference Include="CefSharp.Common.NETCore" Version="91.1.210" />
+      <PackageReference Include="CefSharp.OffScreen.NETCore" Version="91.1.210" />
+      <PackageReference Include="JetBrains.Annotations" Version="2020.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Robust.Client\Robust.Client.csproj" />
+    </ItemGroup>
+
+</Project>
