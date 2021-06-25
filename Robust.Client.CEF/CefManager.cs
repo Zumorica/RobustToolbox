@@ -25,10 +25,11 @@ namespace Robust.Client.CEF
             var settings = new CefSettings()
             {
                 WindowlessRenderingEnabled = true,
+                BrowserSubprocessPath = "/home/zumo/Projects/space-station-14/bin/Content.Client/Robust.Client.CEF",
             };
 
             Logger.Info(CefRuntime.ChromeVersion);
-            
+
             CefRuntime.Initialize(new CefMainArgs(new string[]{}), settings, this, IntPtr.Zero);
 
             _initialized = true;
