@@ -2,11 +2,11 @@ using Xilium.CefGlue;
 
 namespace Robust.Client.CEF
 {
-    internal class WebClient : CefClient
+    internal class RobustWebClient : CefClient
     {
-        private CefRenderHandler _renderHandler;
+        private readonly CefRenderHandler _renderHandler;
 
-        internal WebClient(CefRenderHandler handler)
+        internal RobustWebClient(CefRenderHandler handler)
         {
             _renderHandler = handler;
         }

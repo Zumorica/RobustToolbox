@@ -9,13 +9,14 @@ namespace Robust.Client.CEF
     [UsedImplicitly]
     public class CefManager : CefApp
     {
-        private readonly BrowserProcessHandler _browserProcess = new();
-        private readonly RenderProcessHandler _renderProcessHandler = new();
+        private readonly BrowserProcessHandler _browserProcessHandler;
+        private readonly RenderProcessHandler _renderProcessHandler;
         private bool _initialized = false;
 
         public CefManager() : base()
         {
-
+            _renderProcessHandler = new RenderProcessHandler();
+            _browserProcessHandler = new BrowserProcessHandler();
         }
 
         public void Initialize()
@@ -25,6 +26,7 @@ namespace Robust.Client.CEF
             var settings = new CefSettings()
             {
                 WindowlessRenderingEnabled = true,
+                NoSandbox = true,
                 BrowserSubprocessPath = "/home/zumo/Projects/space-station-14/bin/Content.Client/Robust.Client.CEF",
             };
 
@@ -51,7 +53,7 @@ namespace Robust.Client.CEF
 
         protected override CefBrowserProcessHandler GetBrowserProcessHandler()
         {
-            return _browserProcess;
+            return _browserProcessHandler;
         }
 
         protected override CefRenderProcessHandler GetRenderProcessHandler()
@@ -63,16 +65,19 @@ namespace Robust.Client.CEF
         {
             base.OnBeforeCommandLineProcessing(processType, commandLine);
 
-            Logger.Debug($"{processType} -- {commandLine}");
+            commandLine.AppendSwitch("--disable-gpu");
+            commandLine.AppendSwitch("--disable-gpu-compositing");
+            commandLine.AppendSwitch("--in-process-gpu");
+
+            Logger.Debug($"{commandLine}");
         }
-    }
 
-    public class BrowserProcessHandler : CefBrowserProcessHandler
-    {
+        private class BrowserProcessHandler : CefBrowserProcessHandler
+        {
+        }
 
-    }
-
-    public class RenderProcessHandler : CefRenderProcessHandler
-    {
+        private class RenderProcessHandler : CefRenderProcessHandler
+        {
+        }
     }
 }

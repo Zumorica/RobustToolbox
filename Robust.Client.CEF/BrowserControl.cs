@@ -13,28 +13,38 @@ namespace Robust.Client.CEF
     {
         [Dependency] private readonly IClyde _clyde = default!;
 
-        private WebClient _client;
+        private RobustWebClient _client;
         private CefBrowser _browser;
         private ControlRenderHandler _renderer;
+
+        protected override Vector2 MeasureOverride(Vector2 availableSize)
+        {
+            var buffer = _renderer.Buffer;
+            return new Vector2(buffer.Width, buffer.Height);
+        }
 
         public BrowserControl()
         {
             IoCManager.InjectDependencies(this);
 
             _renderer = new ControlRenderHandler(this);
-            _client = new WebClient(_renderer);
+            _client = new RobustWebClient(_renderer);
 
             var info = CefWindowInfo.Create();
+            info.Width = 500;
+            info.Height = 500;
+            info.WindowlessRenderingEnabled = true;
             var settings = new CefBrowserSettings()
             {
                 WindowlessFrameRate = 60,
             };
 
-            _browser = CefBrowserHost.CreateBrowserSync(info, _client, settings, "https://google.com");
+            _browser = CefBrowserHost.CreateBrowserSync(info, _client, settings, "about:blank");
         }
 
         public void Browse(string url)
         {
+            //_browser.GetMainFrame().LoadUrl(url);
         }
 
         protected override void Draw(DrawingHandleScreen handle)
@@ -87,7 +97,7 @@ namespace Robust.Client.CEF
             }
 
             var screenCoords = _control.ScreenCoordinates;
-            rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int) _control.Size.X, (int) _control.Size.Y);
+            rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
         }
 
         protected override bool GetScreenInfo(CefBrowser browser, CefScreenInfo screenInfo)
