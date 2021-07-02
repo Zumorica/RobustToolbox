@@ -6,6 +6,7 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using Robust.Shared.Log;
 using Xilium.CefGlue;
 
 namespace Robust.Client.CEF
@@ -25,10 +26,12 @@ namespace Robust.Client.CEF
         /// Number of bytes
         /// </summary>
         public int NumberOfBytes { get; private set; }
+
         /// <summary>
         /// Width
         /// </summary>
         public int Width { get; private set; }
+
         /// <summary>
         /// Height
         /// </summary>
@@ -107,6 +110,8 @@ namespace Robust.Client.CEF
                 {
                     return null;
                 }
+
+                Logger.Info($"{Width}x{Height} || LEN: {buffer.Length}");
 
                 var bitmap = new Bitmap(Width, Height, Format);
 

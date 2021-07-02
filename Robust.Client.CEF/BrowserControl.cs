@@ -4,6 +4,7 @@ using System.IO;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Shared.IoC;
+using Robust.Shared.Log;
 using Robust.Shared.Maths;
 using Xilium.CefGlue;
 
@@ -23,6 +24,12 @@ namespace Robust.Client.CEF
             return new Vector2(buffer.Width, buffer.Height);
         }
 
+        protected override Vector2 MeasureCore(Vector2 availableSize)
+        {
+            var buffer = _renderer.Buffer;
+            return new Vector2(buffer.Width, buffer.Height);
+        }
+
         public BrowserControl()
         {
             IoCManager.InjectDependencies(this);
@@ -31,6 +38,7 @@ namespace Robust.Client.CEF
             _client = new RobustWebClient(_renderer);
 
             var info = CefWindowInfo.Create();
+            info.SetAsWindowless(IntPtr.Zero, false);
             info.Width = 500;
             info.Height = 500;
             info.WindowlessRenderingEnabled = true;
@@ -39,12 +47,26 @@ namespace Robust.Client.CEF
                 WindowlessFrameRate = 60,
             };
 
-            _browser = CefBrowserHost.CreateBrowserSync(info, _client, settings, "about:blank");
+            _browser = CefBrowserHost.CreateBrowserSync(info, _client, settings, "about:version");
+        }
+
+        protected override void MouseMove(GUIMouseMoveEventArgs args)
+        {
+            base.MouseMove(args);
+
+            _browser.GetHost().SendMouseMoveEvent(new CefMouseEvent((int)args.Relative.X, (int)args.Relative.Y, CefEventFlags.None), false);
+        }
+
+        protected override void Resized()
+        {
+            base.Resized();
+
+            _browser.GetHost().WasResized();
         }
 
         public void Browse(string url)
         {
-            //_browser.GetMainFrame().LoadUrl(url);
+            _browser.GetMainFrame().LoadUrl(url);
         }
 
         protected override void Draw(DrawingHandleScreen handle)
@@ -56,19 +78,21 @@ namespace Robust.Client.CEF
             if (bitmap == null)
                 return;
 
+            Logger.Debug("DRAW!");
+
             using var memoryStream = new MemoryStream();
 
             bitmap.Save(memoryStream, ImageFormat.Png);
 
             memoryStream.Seek(0, SeekOrigin.Begin);
 
-            using var texture = _clyde.LoadTextureFromPNGStream(memoryStream);
+            var texture = _clyde.LoadTextureFromPNGStream(memoryStream);
 
             handle.DrawTexture(texture, Vector2.Zero);
         }
     }
 
-    internal unsafe class ControlRenderHandler : CefRenderHandler
+    internal class ControlRenderHandler : CefRenderHandler
     {
         public BitmapBuffer Buffer { get; }
         private Control _control;
@@ -96,8 +120,8 @@ namespace Robust.Client.CEF
                 return;
             }
 
-            var screenCoords = _control.ScreenCoordinates;
-            rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
+            // rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
+            rect = new CefRectangle(0, 0, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
         }
 
         protected override bool GetScreenInfo(CefBrowser browser, CefScreenInfo screenInfo)
@@ -122,6 +146,8 @@ namespace Robust.Client.CEF
             if (_control.Disposed)
                 return;
 
+            Logger.Info("We paint!");
+
             foreach (var dirtyRect in dirtyRects)
             {
                 Buffer.UpdateBuffer(width, height, buffer, dirtyRect);
@@ -145,16 +171,16 @@ namespace Robust.Client.CEF
             if (_control.Disposed)
                 return;
         }
-    }
 
-    internal class AccessibilityHandler : CefAccessibilityHandler
-    {
-        protected override void OnAccessibilityTreeChange(CefValue value)
+        private class AccessibilityHandler : CefAccessibilityHandler
         {
-        }
+            protected override void OnAccessibilityTreeChange(CefValue value)
+            {
+            }
 
-        protected override void OnAccessibilityLocationChange(CefValue value)
-        {
+            protected override void OnAccessibilityLocationChange(CefValue value)
+            {
+            }
         }
     }
 }

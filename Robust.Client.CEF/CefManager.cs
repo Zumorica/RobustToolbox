@@ -26,19 +26,24 @@ namespace Robust.Client.CEF
             var settings = new CefSettings()
             {
                 WindowlessRenderingEnabled = true,
+                ExternalMessagePump = false,
                 NoSandbox = true,
                 BrowserSubprocessPath = "/home/zumo/Projects/space-station-14/bin/Content.Client/Robust.Client.CEF",
+                LocalesDirPath = "/home/zumo/Projects/space-station-14/bin/Content.Client/locales/",
+                ResourcesDirPath = "/home/zumo/Projects/space-station-14/bin/Content.Client/",
             };
 
-            Logger.Info(CefRuntime.ChromeVersion);
+            Logger.Info($"CEF Version: {CefRuntime.ChromeVersion}");
 
-            CefRuntime.Initialize(new CefMainArgs(new string[]{}), settings, this, IntPtr.Zero);
+            CefRuntime.Initialize(new CefMainArgs(Array.Empty<string>()), settings, this, IntPtr.Zero);
 
             _initialized = true;
         }
 
         public void Update()
         {
+            DebugTools.Assert(_initialized);
+
             CefRuntime.DoMessageLoopWork();
         }
 
@@ -63,8 +68,8 @@ namespace Robust.Client.CEF
 
         protected override void OnBeforeCommandLineProcessing(string processType, CefCommandLine commandLine)
         {
-            base.OnBeforeCommandLineProcessing(processType, commandLine);
-
+            commandLine.AppendSwitch("--no-zygote");
+            commandLine.AppendSwitch("--single-process");
             commandLine.AppendSwitch("--disable-gpu");
             commandLine.AppendSwitch("--disable-gpu-compositing");
             commandLine.AppendSwitch("--in-process-gpu");
