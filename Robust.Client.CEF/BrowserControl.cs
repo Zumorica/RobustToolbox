@@ -3,6 +3,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Shared.Input;
 using Robust.Shared.IoC;
 using Robust.Shared.Log;
 using Robust.Shared.Maths;
@@ -54,13 +55,66 @@ namespace Robust.Client.CEF
         {
             base.MouseMove(args);
 
-            _browser.GetHost().SendMouseMoveEvent(new CefMouseEvent((int)args.Relative.X, (int)args.Relative.Y, CefEventFlags.None), false);
+            // TODO CEF Modifiers
+            _browser.GetHost().SendMouseMoveEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), false);
+        }
+
+        protected override void MouseExited()
+        {
+            base.MouseExited();
+
+            // TODO CEF Modifiers
+            _browser.GetHost().SendMouseMoveEvent(new CefMouseEvent(0, 0, CefEventFlags.None), true);
+        }
+
+        protected override void MouseWheel(GUIMouseWheelEventArgs args)
+        {
+            base.MouseWheel(args);
+
+            // TODO CEF Modifiers
+            _browser.GetHost().SendMouseWheelEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), (int)args.Delta.X*4, (int)args.Delta.Y*4);
+        }
+
+        protected override void TextEntered(GUITextEventArgs args)
+        {
+            base.TextEntered(args);
+
+            _browser.GetHost().SendKeyEvent(new CefKeyEvent(){NativeKeyCode = (int) args.CodePoint});
+        }
+
+        protected override void KeyBindUp(GUIBoundKeyEventArgs args)
+        {
+            base.KeyBindUp(args);
+
+            // TODO CEF Clean up this shitty code. Also add middle click.
+
+            if (args.Function == EngineKeyFunctions.UIClick)
+            {
+                _browser.GetHost().SendMouseClickEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), CefMouseButtonType.Left, true, 1);
+            } else if (args.Function == EngineKeyFunctions.UIRightClick)
+            {
+                _browser.GetHost().SendMouseClickEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), CefMouseButtonType.Middle, true, 1);
+            }
+        }
+
+        protected override void KeyBindDown(GUIBoundKeyEventArgs args)
+        {
+            base.KeyBindDown(args);
+
+            if (args.Function == EngineKeyFunctions.UIClick)
+            {
+                _browser.GetHost().SendMouseClickEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), CefMouseButtonType.Left, false, 1);
+            } else if (args.Function == EngineKeyFunctions.UIRightClick)
+            {
+                _browser.GetHost().SendMouseClickEvent(new CefMouseEvent((int)args.RelativePosition.X, (int)args.RelativePosition.Y, CefEventFlags.None), CefMouseButtonType.Middle, false, 1);
+            }
         }
 
         protected override void Resized()
         {
             base.Resized();
 
+            _browser.GetHost().NotifyMoveOrResizeStarted();
             _browser.GetHost().WasResized();
         }
 
@@ -120,7 +174,8 @@ namespace Robust.Client.CEF
                 return;
             }
 
-            // rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
+            //var screenCoords = _control.ScreenCoordinates;
+            //rect = new CefRectangle((int) screenCoords.X, (int) screenCoords.Y, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
             rect = new CefRectangle(0, 0, (int)Math.Max(_control.Size.X, 1), (int)Math.Max(_control.Size.Y, 1));
         }
 
@@ -156,8 +211,7 @@ namespace Robust.Client.CEF
 
         protected override void OnAcceleratedPaint(CefBrowser browser, CefPaintElementType type, CefRectangle[] dirtyRects, IntPtr sharedHandle)
         {
-            if (_control.Disposed)
-                return;
+            // Unused.
         }
 
         protected override void OnScrollOffsetChanged(CefBrowser browser, double x, double y)
